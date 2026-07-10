@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GroovePlay 조직도</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#3b5bff">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="조직도">
+<meta name="mobile-web-app-capable" content="yes">
+<!-- Excel 처리 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+  integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+  :root{
+    --bg:#ffffff; --text:#111317; --sub:#8b8f97; --sub2:#b0b4bb;
+    --line:#f0f1f3; --chip:#f4f5f7;
+    --accent:#3b5bff; --accent-soft:#eef1ff;
+    --ok:#0e8a6f; --ok-soft:#e5f6f0; --danger:#e0455f; --hi:#fff2a8;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",sans-serif;
+    background:#e9eaed;color:var(--text);display:flex;justify-content:center}
+  .app{width:100%;max-width:440px;min-height:100vh;background:var(--bg);display:flex;flex-direction:column}
+
+  /* ===== 상단 ===== */
+  .top{position:sticky;top:0;z-index:20;background:#fff;padding:14px 18px 6px}
+  .bar{display:flex;align-items:center;gap:12px}
+  .bar .logo{width:40px;height:40px;border-radius:16px;background:linear-gradient(135deg,#3b5bff,#7a4bff);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:16px}
+  .bar .ttl b{font-size:18px;font-weight:800}
+  .bar .ttl span{display:block;font-size:11.5px;color:var(--sub);margin-top:1px}
+  .bar .ttl.editable{cursor:pointer}
+  .bar .ttl.editable b::after{content:" ✏️";font-size:12px}
+  .bar .acts{margin-left:auto;display:flex;gap:6px}
+  .icobtn{border:none;background:none;font-size:19px;cursor:pointer;color:#3a3d44;
+    width:34px;height:34px;border-radius:10px;display:grid;place-items:center}
+  .icobtn:active{background:#f0f1f3}
+  .icobtn.on{background:var(--accent);color:#fff}
+
+  .search{position:relative;margin-top:12px}
+  .search input{width:100%;padding:10px 36px;border:none;border-radius:10px;
+    background:#f2f3f5;font-size:14.5px;outline:none}
+  .search .ic{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--sub);font-size:15px}
+  .search .clr{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:#dfe1e5;
+    color:var(--sub);width:22px;height:22px;border-radius:50%;cursor:pointer;display:none;font-size:12px}
+
+  .toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .tbtn{border:1px solid var(--line);background:#fff;border-radius:16px;padding:6px 12px;
+    font-size:12px;cursor:pointer;color:#40434a;font-weight:600}
+  .tbtn:active{background:#f2f3f5}
+
+  /* ===== 리스트 ===== */
+  .list{padding:4px 0 70px;flex:1}
+
+  /* 부서 = 섹션 헤더 */
+  .dept{margin-top:2px}   /* 선 없이 라벨+여백으로 구분 (카카오 방식) */
+  .dept-head{display:flex;align-items:center;gap:8px;padding:16px 18px 6px;cursor:pointer;user-select:none}
+  .dept-head .dname{font-size:13px;color:#8b8f97;font-weight:600}
+  .dept-head .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .dept-head .dcount{font-size:12.5px;color:var(--sub2)}
+  .dept-head .arw{font-size:11px;color:var(--sub2);transition:transform .25s}
+  .dept.open .dept-head .arw{transform:rotate(90deg)}
+  .dept-tools{display:flex;gap:3px}
+
+  .members{overflow:hidden;max-height:0;transition:max-height .3s ease}
+  .dept.open .members{max-height:9000px;padding:4px 0 8px}
+
+  /* 팀 = 소제목 */
+  .team-head{display:flex;align-items:center;gap:8px;padding:8px 18px 3px;
+    opacity:0;transform:translateY(6px)}
+  .dept.open .team-head.show{animation:pop .3s ease forwards}
+  .team-head .tline{width:3px;height:12px;border-radius:2px;background:var(--accent);opacity:.55}
+  .team-head .tname{font-size:12px;color:#7a7f88;font-weight:700}
+
+  /* 인원 = 친구 행 */
+  .m{display:flex;gap:12px;align-items:center;padding:9px 18px;cursor:default;
+    opacity:0;transform:translateY(6px)}
+  .m.in-team{padding-left:26px}   /* 팀 소속은 살짝 들여쓰기 */
+  .dept.open .m.show{animation:pop .3s ease forwards}
+  @keyframes pop{to{opacity:1;transform:translateY(0)}}
+  .m:active{background:#f7f8fa}
+  .m .av{width:46px;height:46px;border-radius:17px;flex:none;display:grid;place-items:center;
+    color:#fff;font-weight:700;font-size:16px}
+  .m .info{flex:1;min-width:0}
+  .m .r1{display:flex;align-items:baseline;gap:7px}
+  .m .nm{font-weight:700;font-size:15.5px}
+  .m .rk{font-size:12px;color:var(--accent);background:var(--accent-soft);padding:1px 8px;border-radius:20px}
+  .m .duty{font-size:13px;color:var(--sub);margin-top:2px;line-height:1.4;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .m .tels{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .tel{display:inline-flex;align-items:center;gap:4px;font-size:12px;text-decoration:none;
+    font-weight:600;padding:3px 9px;border-radius:20px}
+  .tel:active{opacity:.6}
+  .tel.mob{color:var(--accent);background:var(--accent-soft)}
+  .tel.ext{color:var(--ok);background:var(--ok-soft);cursor:default}
+  mark{background:var(--hi);color:inherit;border-radius:3px;padding:0 1px}
+
+  /* 편집 컨트롤 */
+  .rowtools{display:flex;gap:3px;margin-left:auto}
+  .mini{border:1px solid var(--line);background:#fafbfc;border-radius:8px;width:28px;height:28px;
+    font-size:12px;cursor:pointer;display:grid;place-items:center;color:var(--sub);flex:none}
+  .mini:active{background:#eef0f4}
+  .mini.del{color:var(--danger)}
+  .add-m{padding:6px 18px 2px}
+  .add-m button{width:100%;border:1px dashed var(--accent);color:var(--accent);background:var(--accent-soft);
+    border-radius:12px;padding:9px;font-size:12.5px;cursor:pointer;font-weight:600}
+
+  .empty{text-align:center;color:var(--sub);padding:60px 20px;font-size:14px;display:none}
+  .empty.show{display:block}
+
+  /* 모달 */
+  .mask{position:fixed;inset:0;background:rgba(20,23,35,.45);z-index:50;display:none;
+    align-items:flex-end;justify-content:center}
+  .mask.show{display:flex}
+  .sheet{width:100%;max-width:440px;background:#fff;border-radius:20px 20px 0 0;padding:18px 18px 24px;
+    max-height:92vh;overflow:auto;animation:up .25s ease}
+  @keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:translateY(0);opacity:1}}
+  .sheet h3{margin:2px 0 14px;font-size:17px}
+  .fld{margin-bottom:12px}
+  .fld label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:5px;font-weight:600}
+  .fld input,.fld select,.fld textarea{width:100%;padding:11px 12px;border:1px solid #e5e8ee;
+    border-radius:11px;font-size:15px;outline:none;font-family:inherit;background:#fff}
+  .fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--accent)}
+  .fld textarea{resize:vertical;min-height:56px}
+  .sheet-btns{display:flex;gap:8px;margin-top:6px}
+  .sheet-btns button{flex:1;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;border:none}
+  .b-save{background:var(--accent);color:#fff}
+  .b-cancel{background:#eef0f4;color:var(--text)}
+  .b-del{background:#fdecef;color:var(--danger);flex:0 0 auto;padding:13px 16px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="bar">
+      <div class="logo" id="coLogo">G</div>
+      <div class="ttl" id="coTitle"><b id="coName">GroovePlay</b><span id="hdrCount"></span></div>
+      <div class="acts">
+        <button class="icobtn" id="editToggle" title="편집">✏️</button>
+      </div>
+    </div>
+    <div class="search">
+      <span class="ic">🔍</span>
+      <input id="q" type="text" placeholder="이름 · 핸드폰 · 내선 · 업무 검색" autocomplete="off">
+      <button class="clr" id="clr">✕</button>
+    </div>
+    <div class="toolbar">
+      <button class="tbtn" id="addDept" style="display:none">＋ 부서 추가</button>
+      <button class="tbtn" id="exportBtn">⬇ 엑셀 내보내기</button>
+      <button class="tbtn" id="importBtn">⬆ 엑셀 불러오기</button>
+      <button class="tbtn" id="resetBtn" style="display:none">↺ 초기화</button>
+      <input type="file" id="importFile" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none">
+    </div>
+  </div>
+
+  <div class="list" id="list"></div>
+  <div class="empty" id="empty">검색 결과가 없어요.</div>
+</div>
+
+<!-- 멤버 편집 모달 -->
+<div class="mask" id="mMask">
+  <div class="sheet">
+    <h3 id="mTitle">멤버 추가</h3>
+    <div class="fld"><label>부서</label><select id="fDept"></select></div>
+    <div class="fld"><label>팀 <span style="color:#b0b4bb;font-weight:400">(선택 · 비우면 부서 직속)</span></label><input id="fTeam" placeholder="예: 서버팀" list="teamList"><datalist id="teamList"></datalist></div>
+    <div class="fld"><label>이름</label><input id="fName" placeholder="예: 홍길동"></div>
+    <div class="fld"><label>직급</label><input id="fRank" placeholder="예: 과장"></div>
+    <div class="fld"><label>핸드폰</label><input id="fMobile" placeholder="예: 010-1234-5678" inputmode="tel"></div>
+    <div class="fld"><label>내선번호</label><input id="fExt" placeholder="예: 101" inputmode="numeric"></div>
+    <div class="fld"><label>담당 업무</label><textarea id="fDuty" placeholder="예: 인사·채용, 근태 관리"></textarea></div>
+    <div class="sheet-btns">
+      <button class="b-del" id="mDelete" style="display:none">삭제</button>
+      <button class="b-cancel" id="mCancel">취소</button>
+      <button class="b-save" id="mSave">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 부서 편집 모달 -->
+<div class="mask" id="dMask">
+  <div class="sheet">
+    <h3 id="dTitle">부서 추가</h3>
+    <div class="fld"><label>부서명</label><input id="dName" placeholder="예: 경영지원실"></div>
+    <div class="sheet-btns">
+      <button class="b-del" id="dDelete" style="display:none">삭제</button>
+      <button class="b-cancel" id="dCancel">취소</button>
+      <button class="b-save" id="dSave">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- 기본(초기) 조직 데이터 ----------
+const DEFAULT_ORG = [
+  { dept:"경영지원실", members:[
+    {name:"김도현", rank:"실장", team:"", mobile:"010-2211-3300", ext:"101", duty:"경영 총괄, 예산·인사 승인"},
+    {name:"박수민", rank:"과장", team:"인사팀", mobile:"010-2211-3311", ext:"102", duty:"인사·채용, 4대보험, 근태 관리"},
+    {name:"이정우", rank:"대리", team:"재무팀", mobile:"010-2211-3322", ext:"103", duty:"회계·세무, 법인카드 정산"},
+    {name:"최유나", rank:"주임", team:"총무팀", mobile:"010-2211-3333", ext:"104", duty:"총무, 비품 구매, 사무실 관리"},
+  ]},
+  { dept:"개발본부", members:[
+    {name:"정태영", rank:"본부장", team:"", mobile:"010-5566-1000", ext:"201", duty:"개발 총괄, 기술 로드맵"},
+    {name:"한지훈", rank:"팀장", team:"클라이언트팀", mobile:"010-5566-1010", ext:"210", duty:"유니티 클라이언트 개발"},
+    {name:"오세라", rank:"선임", team:"클라이언트팀", mobile:"010-5566-1011", ext:"211", duty:"게임 UI/UX 구현, 인게임 이펙트"},
+    {name:"강민석", rank:"팀장", team:"서버팀", mobile:"010-5566-1020", ext:"220", duty:"게임 서버·매칭 시스템"},
+    {name:"윤하람", rank:"선임", team:"서버팀", mobile:"010-5566-1021", ext:"221", duty:"백엔드 API, DB 설계, 결제 서버"},
+  ]},
+  { dept:"기획실", members:[
+    {name:"송재원", rank:"실장", team:"", mobile:"010-7788-2000", ext:"301", duty:"게임 기획 총괄, 밸런스 설계"},
+    {name:"임소정", rank:"과장", team:"콘텐츠기획팀", mobile:"010-7788-2011", ext:"302", duty:"레벨 디자인, 콘텐츠 기획"},
+    {name:"배준호", rank:"대리", team:"시스템기획팀", mobile:"010-7788-2022", ext:"303", duty:"시스템 기획, 확률·경제 설계"},
+  ]},
+  { dept:"아트실", members:[
+    {name:"신예진", rank:"실장", team:"", mobile:"010-3344-5000", ext:"401", duty:"아트 디렉션, 원화·컨셉 총괄"},
+    {name:"권도윤", rank:"선임", team:"3D팀", mobile:"010-3344-5011", ext:"402", duty:"캐릭터 3D 모델링, 애니메이션"},
+    {name:"문가영", rank:"주임", team:"원화팀", mobile:"010-3344-5022", ext:"403", duty:"배경 원화, 인게임 아이콘"},
+  ]},
+  { dept:"사업실", members:[
+    {name:"조현우", rank:"실장", team:"", mobile:"010-9900-6000", ext:"501", duty:"퍼블리싱, 사업 제휴, 계약"},
+    {name:"홍채린", rank:"과장", team:"마케팅팀", mobile:"010-9900-6011", ext:"502", duty:"마케팅, 광고 집행, SNS 운영"},
+    {name:"서동욱", rank:"대리", team:"운영팀", mobile:"010-9900-6022", ext:"503", duty:"CS·고객대응, 커뮤니티 관리"},
+    {name:"남지아", rank:"주임", team:"운영팀", mobile:"010-9900-6033", ext:"504", duty:"스토어 운영, 앱 심사 대응"},
+  ]},
+];
+
+const STORE_KEY = "grooveplay_org_v2";
+const NAME_KEY  = "grooveplay_company_v1";
+const DEFAULT_NAME = "GroovePlay";
+
+// ---------- 상태 ----------
+let ORG = load();
+let COMPANY = loadName();
+let editMode = false;
+let openState = {};
+let mEditRef = null;
+let dEditRef = null;
+
+function load(){
+  try{
+    const s=localStorage.getItem(STORE_KEY);
+    if(s){
+      const v=JSON.parse(s);
+      if(Array.isArray(v) && v.every(d=>d && typeof d.dept==='string' && Array.isArray(d.members))) return v;
+    }
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_ORG));
+}
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(ORG)); }catch(e){
+    alert("저장 실패: 브라우저 저장공간을 사용할 수 없습니다.");
+  }
+}
+function loadName(){
+  try{ const s=localStorage.getItem(NAME_KEY); if(s) return s; }catch(e){}
+  return DEFAULT_NAME;
+}
+function saveName(){ try{ localStorage.setItem(NAME_KEY, COMPANY); }catch(e){} }
+function applyName(){
+  document.getElementById('coName').textContent = COMPANY;
+  document.getElementById('coLogo').textContent = (COMPANY.trim()[0]||'G').toUpperCase();
+  document.title = COMPANY + " 조직도";
+}
+
+// ---------- 유틸 ----------
+const COLORS = ["#3b5bff","#7a4bff","#e0518a","#f0883e","#2fae72","#0ea5b5","#8b5cf6","#d9455f"];
+function colorFor(s){let h=0;for(const c of s)h=c.charCodeAt(0)+((h<<5)-h);return COLORS[Math.abs(h)%COLORS.length];}
+function esc(s){return (s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function hl(text,q){ text=text||""; if(!q) return esc(text);
+  const i=text.toLowerCase().indexOf(q.toLowerCase());
+  if(i<0) return esc(text);
+  return esc(text.slice(0,i))+'<mark>'+esc(text.slice(i,i+q.length))+'</mark>'+esc(text.slice(i+q.length));
+}
+
+// ---------- 요소 ----------
+const list=document.getElementById('list');
+const q=document.getElementById('q');
+const clr=document.getElementById('clr');
+const empty=document.getElementById('empty');
+
+function match(m,query){
+  if(!query) return true;
+  const t=(m.name+' '+m.rank+' '+(m.team||'')+' '+m.mobile+' '+(m.mobile||'').replace(/-/g,'')+
+          ' 내선 '+m.ext+' '+m.duty).toLowerCase();
+  return t.includes(query.toLowerCase());
+}
+
+function updateCount(){
+  const total=ORG.reduce((a,d)=>a+d.members.length,0);
+  document.getElementById('hdrCount').textContent=`부서 ${ORG.length} · 임직원 ${total}`;
+}
+
+function render(){
+  const query=q.value.trim();
+  clr.style.display=query?'block':'none';
+  updateCount();
+  list.innerHTML='';
+  let anyResult=false;
+
+  ORG.forEach((d,di)=>{
+    const filtered=[];
+    d.members.forEach((m,mi)=>{ if(match(m,query)) filtered.push({m,mi}); });
+    if(query && filtered.length===0) return;
+    anyResult=true;
+
+    const open = editMode ? true : (query ? true : (openState[di]||false));
+    const dept=document.createElement('div');
+    dept.className='dept'+(open?' open':'');
+
+    const deptTools = editMode ? `
+      <span class="dept-tools" onclick="event.stopPropagation()">
+        <button class="mini" onclick="moveDept(${di},-1)" title="위로">▲</button>
+        <button class="mini" onclick="moveDept(${di},1)" title="아래로">▼</button>
+        <button class="mini" onclick="openDeptEdit(${di})" title="부서명 수정">✏️</button>
+        <button class="mini del" onclick="delDept(${di})" title="부서 삭제">🗑</button>
+      </span>` : '';
+
+    dept.innerHTML=`
+      <div class="dept-head" data-di="${di}">
+        <span class="dname">${esc(d.dept)}</span>
+        <span class="right">
+          <span class="dcount">${query?filtered.length:d.members.length}</span>
+          ${editMode?deptTools:'<span class="arw">▶</span>'}
+        </span>
+      </div>
+      <div class="members"></div>`;
+
+    const mm=dept.querySelector('.members');
+    let curTeam=null;
+    filtered.forEach((o,idx)=>{
+      const m=o.m, mi=o.mi;
+      const team=(m.team||'').trim();
+
+      // 팀이 바뀌면 소제목 삽입 (팀명이 있을 때만)
+      if(team!==curTeam){
+        curTeam=team;
+        if(team){
+          const th=document.createElement('div');
+          th.className='team-head';
+          if(open){th.classList.add('show');th.style.animationDelay=(idx*45)+'ms';}
+          th.innerHTML=`<span class="tline"></span><span class="tname">${hl(team,query)}</span>`;
+          mm.appendChild(th);
+        }
+      }
+
+      const el=document.createElement('div');
+      el.className='m'+(team?' in-team':'');
+      if(open){el.classList.add('show');el.style.animationDelay=(idx*45)+'ms';}
+
+      const rowTools = editMode ? `
+        <span class="rowtools">
+          <button class="mini" onclick="moveMember(${di},${mi},-1)" title="위로">▲</button>
+          <button class="mini" onclick="moveMember(${di},${mi},1)" title="아래로">▼</button>
+          <button class="mini" onclick="openMemberEdit(${di},${mi})" title="수정">✏️</button>
+        </span>` : '';
+
+      const extChip = m.ext ? `<span class="tel ext">☎ 내선 ${hl(m.ext,query)}</span>` : '';
+      const mobChip = m.mobile ? `<a class="tel mob" href="tel:${(m.mobile||'').replace(/[^0-9+]/g,'')}">📱 ${hl(m.mobile,query)}</a>` : '';
+
+      el.innerHTML=`
+        <div class="av" style="background:${colorFor(m.name||'?')}">${esc((m.name||'?').slice(-2))}</div>
+        <div class="info">
+          <div class="r1"><span class="nm">${hl(m.name,query)}</span><span class="rk">${hl(m.rank,query)}</span>${rowTools}</div>
+          <div class="duty">${hl(m.duty,query)}</div>
+          <div class="tels">${mobChip}${extChip}</div>
+        </div>`;
+      mm.appendChild(el);
+    });
+
+    if(editMode){
+      const add=document.createElement('div');
+      add.className='add-m';
+      add.innerHTML=`<button onclick="openMemberAdd(${di})">＋ ${esc(d.dept)}에 인원 추가</button>`;
+      mm.appendChild(add);
+    }
+    list.appendChild(dept);
+  });
+
+  empty.className='empty'+(anyResult?'':' show');
+}
+
+// ---------- 접기/펼치기 ----------
+list.addEventListener('click',e=>{
+  const h=e.target.closest('.dept-head');
+  if(!h || q.value.trim() || editMode) return;
+  const di=h.dataset.di;
+  openState[di]=!openState[di];
+  render();
+});
+
+// ---------- 순서 변경 ----------
+function moveDept(di,dir){
+  const j=di+dir; if(j<0||j>=ORG.length) return;
+  [ORG[di],ORG[j]]=[ORG[j],ORG[di]];
+  save(); render();
+}
+function moveMember(di,mi,dir){
+  const arr=ORG[di].members; const j=mi+dir; if(j<0||j>=arr.length) return;
+  [arr[mi],arr[j]]=[arr[j],arr[mi]];
+  save(); render();
+}
+function delDept(di){
+  if(!confirm(`"${ORG[di].dept}" 부서와 소속 인원을 모두 삭제할까요?`)) return;
+  ORG.splice(di,1); save(); render();
+}
+
+// 같은 팀끼리 모이도록 부서 내 인원을 팀 첫 등장 순서로 안정 정렬
+function normalizeTeams(arr){
+  const order=[]; const groups=new Map();
+  arr.forEach(m=>{ const t=(m.team||'').trim(); if(!groups.has(t)){groups.set(t,[]);order.push(t);} groups.get(t).push(m); });
+  const out=[]; order.forEach(t=>groups.get(t).forEach(m=>out.push(m))); return out;
+}
+function allTeams(){
+  const s=new Set();
+  ORG.forEach(d=>d.members.forEach(m=>{ if((m.team||'').trim()) s.add(m.team.trim()); }));
+  return [...s];
+}
+
+// ---------- 멤버 모달 ----------
+const mMask=document.getElementById('mMask');
+const fDept=document.getElementById('fDept');
+const fTeam=document.getElementById('fTeam');
+const fName=document.getElementById('fName'),fRank=document.getElementById('fRank');
+const fMobile=document.getElementById('fMobile'),fExt=document.getElementById('fExt'),fDuty=document.getElementById('fDuty');
+
+function fillDeptSelect(sel){
+  fDept.innerHTML=ORG.map((d,i)=>`<option value="${i}">${esc(d.dept)}</option>`).join('');
+  fDept.value=sel;
+}
+function fillTeamList(){
+  document.getElementById('teamList').innerHTML=allTeams().map(t=>`<option value="${esc(t)}">`).join('');
+}
+function openMemberAdd(di){
+  mEditRef=null;
+  document.getElementById('mTitle').textContent='멤버 추가';
+  document.getElementById('mDelete').style.display='none';
+  fillDeptSelect(di); fillTeamList();
+  fTeam.value=fName.value=fRank.value=fMobile.value=fExt.value=fDuty.value='';
+  mMask.classList.add('show'); fName.focus();
+}
+function openMemberEdit(di,mi){
+  mEditRef={di,mi};
+  const m=ORG[di].members[mi];
+  document.getElementById('mTitle').textContent='멤버 수정';
+  document.getElementById('mDelete').style.display='block';
+  fillDeptSelect(di); fillTeamList();
+  fTeam.value=m.team||''; fName.value=m.name||''; fRank.value=m.rank||''; fMobile.value=m.mobile||'';
+  fExt.value=m.ext||''; fDuty.value=m.duty||'';
+  mMask.classList.add('show');
+}
+function closeMember(){ mMask.classList.remove('show'); }
+document.getElementById('mCancel').onclick=closeMember;
+mMask.addEventListener('click',e=>{ if(e.target===mMask) closeMember(); });
+
+document.getElementById('mSave').onclick=()=>{
+  const name=fName.value.trim();
+  if(!name){ alert('이름을 입력하세요.'); fName.focus(); return; }
+  const rec={name, rank:fRank.value.trim(), team:fTeam.value.trim(), mobile:fMobile.value.trim(),
+             ext:fExt.value.trim(), duty:fDuty.value.trim()};
+  const targetDi=parseInt(fDept.value,10);
+  if(mEditRef){
+    if(mEditRef.di===targetDi){
+      ORG[targetDi].members[mEditRef.mi]=rec;
+    }else{
+      ORG[mEditRef.di].members.splice(mEditRef.mi,1);
+      ORG[targetDi].members.push(rec);
+    }
+  }else{
+    ORG[targetDi].members.push(rec);
+  }
+  ORG[targetDi].members=normalizeTeams(ORG[targetDi].members);
+  save(); closeMember(); render();
+};
+document.getElementById('mDelete').onclick=()=>{
+  if(!mEditRef) return;
+  if(!confirm(`"${ORG[mEditRef.di].members[mEditRef.mi].name}" 님을 삭제할까요?`)) return;
+  ORG[mEditRef.di].members.splice(mEditRef.mi,1);
+  save(); closeMember(); render();
+};
+
+// ---------- 부서 모달 ----------
+const dMask=document.getElementById('dMask');
+const dName=document.getElementById('dName');
+function openDeptAdd(){
+  dEditRef=null;
+  document.getElementById('dTitle').textContent='부서 추가';
+  document.getElementById('dDelete').style.display='none';
+  dName.value=''; dMask.classList.add('show'); dName.focus();
+}
+function openDeptEdit(di){
+  dEditRef=di;
+  document.getElementById('dTitle').textContent='부서명 수정';
+  document.getElementById('dDelete').style.display='block';
+  dName.value=ORG[di].dept; dMask.classList.add('show'); dName.focus();
+}
+function closeDept(){ dMask.classList.remove('show'); }
+document.getElementById('dCancel').onclick=closeDept;
+dMask.addEventListener('click',e=>{ if(e.target===dMask) closeDept(); });
+document.getElementById('dSave').onclick=()=>{
+  const nm=dName.value.trim();
+  if(!nm){ alert('부서명을 입력하세요.'); return; }
+  if(dEditRef===null){ ORG.push({dept:nm, members:[]}); }
+  else{ ORG[dEditRef].dept=nm; }
+  save(); closeDept(); render();
+};
+document.getElementById('dDelete').onclick=()=>{
+  if(dEditRef===null) return;
+  if(!confirm(`"${ORG[dEditRef].dept}" 부서와 소속 인원을 모두 삭제할까요?`)) return;
+  ORG.splice(dEditRef,1); save(); closeDept(); render();
+};
+
+// ---------- 편집 모드 토글 ----------
+const editToggle=document.getElementById('editToggle');
+const addDeptBtn=document.getElementById('addDept');
+const resetBtn=document.getElementById('resetBtn');
+editToggle.onclick=()=>{
+  editMode=!editMode;
+  editToggle.classList.toggle('on',editMode);
+  editToggle.textContent=editMode?'✓':'✏️';
+  addDeptBtn.style.display=editMode?'inline-flex':'none';
+  resetBtn.style.display=editMode?'inline-flex':'none';
+  coTitle.classList.toggle('editable',editMode);
+  render();
+};
+addDeptBtn.onclick=openDeptAdd;
+
+// ---------- 회사명 편집 ----------
+const coTitle=document.getElementById('coTitle');
+coTitle.onclick=()=>{
+  if(!editMode) return;
+  const v=prompt('회사명을 입력하세요.', COMPANY);
+  if(v===null) return;
+  const nm=v.trim(); if(!nm) return;
+  COMPANY=nm; saveName(); applyName();
+};
+
+// ---------- 엑셀 내보내기 / 불러오기 / 초기화 ----------
+const COLS = ["부서","팀","이름","직급","핸드폰","내선번호","담당업무"];
+
+function fileStamp(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}`;
+}
+
+document.getElementById('exportBtn').onclick=()=>{
+  if(typeof XLSX==='undefined'){ alert('엑셀 모듈을 불러오지 못했습니다. 인터넷 연결 후 다시 시도하세요.'); return; }
+  // 조직도 시트
+  const rows=[COLS];
+  ORG.forEach(d=>d.members.forEach(m=>{
+    rows.push([d.dept, m.team||'', m.name||'', m.rank||'', m.mobile||'', m.ext||'', m.duty||'']);
+  }));
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:14},{wch:13},{wch:10},{wch:9},{wch:16},{wch:9},{wch:40}];
+  XLSX.utils.book_append_sheet(wb, ws, "조직도");
+  // 설정 시트 (회사명)
+  const cfg=XLSX.utils.aoa_to_sheet([["항목","값"],["회사명",COMPANY]]);
+  cfg['!cols']=[{wch:12},{wch:24}];
+  XLSX.utils.book_append_sheet(wb, cfg, "설정");
+  XLSX.writeFile(wb, `${COMPANY}_조직도_${fileStamp()}.xlsx`);
+};
+
+const importFile=document.getElementById('importFile');
+document.getElementById('importBtn').onclick=()=>{
+  if(typeof XLSX==='undefined'){ alert('엑셀 모듈을 불러오지 못했습니다. 인터넷 연결 후 다시 시도하세요.'); return; }
+  importFile.click();
+};
+
+// 헤더 이름의 다양한 표기를 허용
+function pick(row, keys){
+  for(const k of Object.keys(row)){
+    const kk=k.replace(/\s/g,'');
+    if(keys.some(t=>kk===t)) return row[k];
+  }
+  return '';
+}
+function cell(v){ return (v==null?'':String(v)).trim(); }
+
+importFile.onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const wb=XLSX.read(r.result,{type:'array'});
+      // 조직도 시트 찾기 (없으면 첫 시트)
+      const shName = wb.SheetNames.find(n=>/조직|org|명단|연락/i.test(n)) || wb.SheetNames[0];
+      const json = XLSX.utils.sheet_to_json(wb.Sheets[shName], {defval:''});
+      if(!json.length) throw new Error('빈 시트');
+
+      const map=new Map(); const order=[];
+      json.forEach(row=>{
+        const dept = cell(pick(row,["부서","부서명","department","dept","본부","소속"])) || "미분류";
+        const name = cell(pick(row,["이름","성명","name","성함"]));
+        if(!name && !cell(pick(row,["핸드폰","내선번호","담당업무"]))) return; // 빈 행 skip
+        const rec={
+          name,
+          rank:   cell(pick(row,["직급","직책","직위","rank","title"])),
+          team:   cell(pick(row,["팀","팀명","team","파트","그룹"])),
+          mobile: cell(pick(row,["핸드폰","휴대폰","휴대전화","전화","전화번호","mobile","phone","연락처"])),
+          ext:    cell(pick(row,["내선번호","내선","ext","extension"])),
+          duty:   cell(pick(row,["담당업무","업무","담당","duty","role","직무"])),
+        };
+        if(!map.has(dept)){ map.set(dept,[]); order.push(dept); }
+        map.get(dept).push(rec);
+      });
+      if(!order.length) throw new Error('데이터 없음');
+
+      ORG = order.map(d=>({dept:d, members:normalizeTeams(map.get(d))}));
+
+      // 설정 시트에서 회사명
+      const cfgName = wb.SheetNames.find(n=>/설정|config|회사/i.test(n));
+      if(cfgName){
+        const cfg=XLSX.utils.sheet_to_json(wb.Sheets[cfgName],{header:1});
+        cfg.forEach(rw=>{ if(rw[0] && /회사|company|name/i.test(rw[0]) && rw[1]){ COMPANY=String(rw[1]).trim(); } });
+        saveName(); applyName();
+      }
+
+      save(); openState={}; render();
+      alert(`불러오기 완료 · ${ORG.length}개 부서, ${ORG.reduce((a,d)=>a+d.members.length,0)}명`);
+    }catch(err){
+      alert('엑셀을 읽지 못했습니다. 헤더가 [부서·팀·이름·직급·핸드폰·내선번호·담당업무] 인지 확인하세요.');
+    }
+    importFile.value='';
+  };
+  r.readAsArrayBuffer(f);
+};
+resetBtn.onclick=()=>{
+  if(!confirm('모든 변경을 지우고 초기 샘플 데이터로 되돌릴까요?')) return;
+  ORG=JSON.parse(JSON.stringify(DEFAULT_ORG)); save();
+  COMPANY=DEFAULT_NAME; saveName(); applyName();
+  openState={}; render();
+};
+
+// ---------- 검색 ----------
+q.addEventListener('input',render);
+clr.addEventListener('click',()=>{q.value='';render();q.focus();});
+
+applyName();
+render();
+
+// ---------- PWA: 서비스워커 등록 ----------
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
