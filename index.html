@@ -3,99 +3,145 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
 <title>GroovePlay 조직도</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#3b5bff">
+<meta name="theme-color" content="#f2f4f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101014" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="조직도">
 <meta name="mobile-web-app-capable" content="yes">
+<!-- 폰트 -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" crossorigin="anonymous"
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <!-- Excel 처리 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
   integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA=="
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
   :root{
-    --bg:#ffffff; --text:#111317; --sub:#8b8f97; --sub2:#b0b4bb;
-    --line:#f0f1f3; --chip:#f4f5f7;
-    --accent:#3b5bff; --accent-soft:#eef1ff;
-    --ok:#0e8a6f; --ok-soft:#e5f6f0; --danger:#e0455f; --hi:#fff2a8;
+    color-scheme:light dark;
+    --page:#e8eaee; --app:#f2f4f6; --surface:#ffffff; --field:#f2f4f6;
+    --text:#191f28; --sub:#6b7684; --sub2:#adb5bd; --line:#eef0f3;
+    --accent:#3b5bff; --accent2:#7a4bff; --accent-soft:#e9edff;
+    --ok:#0e8a6f; --ok-soft:#e3f4ee; --danger:#f04452; --danger-soft:#fdebee;
+    --hi:#ffe88a; --press:#eceef2; --top:rgba(242,244,246,.86);
+    --shadow:0 1px 2px rgba(25,31,40,.05),0 4px 14px rgba(25,31,40,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --page:#08090b; --app:#101014; --surface:#1a1b20; --field:#25262d;
+      --text:#eceef1; --sub:#9099a5; --sub2:#565b64; --line:#26272e;
+      --accent:#6b87ff; --accent2:#9a74ff; --accent-soft:rgba(107,135,255,.16);
+      --ok:#34c39a; --ok-soft:rgba(52,195,154,.14); --danger:#ff6b7a; --danger-soft:rgba(255,107,122,.15);
+      --hi:#5a4d14; --press:#23242b; --top:rgba(16,16,20,.82);
+      --shadow:0 1px 2px rgba(0,0,0,.45);
+    }
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",sans-serif;
-    background:#e9eaed;color:var(--text);display:flex;justify-content:center}
-  .app{width:100%;max-width:440px;min-height:100vh;background:var(--bg);display:flex;flex-direction:column}
+  body{margin:0;font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,
+    "Apple SD Gothic Neo","Malgun Gothic","Segoe UI",sans-serif;
+    background:var(--page);color:var(--text);display:flex;justify-content:center;
+    -webkit-font-smoothing:antialiased}
+  .app{width:100%;max-width:440px;min-height:100vh;background:var(--app);display:flex;flex-direction:column}
+
+  /* 공통 SVG 아이콘 */
+  .i{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;
+    stroke-linecap:round;stroke-linejoin:round;flex:none;display:block}
 
   /* ===== 상단 ===== */
-  .top{position:sticky;top:0;z-index:20;background:#fff;padding:14px 18px 6px}
+  .top{position:sticky;top:0;z-index:20;background:var(--top);
+    -webkit-backdrop-filter:blur(16px) saturate(1.6);backdrop-filter:blur(16px) saturate(1.6);
+    padding:calc(14px + env(safe-area-inset-top)) 18px 10px}
   .bar{display:flex;align-items:center;gap:12px}
-  .bar .logo{width:40px;height:40px;border-radius:16px;background:linear-gradient(135deg,#3b5bff,#7a4bff);
-    display:grid;place-items:center;color:#fff;font-weight:800;font-size:16px}
-  .bar .ttl b{font-size:18px;font-weight:800}
+  .bar .logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:17px;
+    box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 30%,transparent)}
+  .bar .ttl b{font-size:18px;font-weight:800;letter-spacing:-.3px}
   .bar .ttl span{display:block;font-size:11.5px;color:var(--sub);margin-top:1px}
   .bar .ttl.editable{cursor:pointer}
-  .bar .ttl.editable b::after{content:" ✏️";font-size:12px}
+  .bar .ttl.editable b::after{content:" ✎";font-size:13px;color:var(--sub)}
   .bar .acts{margin-left:auto;display:flex;gap:6px}
-  .icobtn{border:none;background:none;font-size:19px;cursor:pointer;color:#3a3d44;
-    width:34px;height:34px;border-radius:10px;display:grid;place-items:center}
-  .icobtn:active{background:#f0f1f3}
+  .icobtn{border:none;background:none;cursor:pointer;color:var(--text);
+    width:36px;height:36px;border-radius:12px;display:grid;place-items:center;
+    transition:background .15s,transform .1s}
+  .icobtn .i{width:19px;height:19px}
+  .icobtn:active{background:var(--press);transform:scale(.92)}
   .icobtn.on{background:var(--accent);color:#fff}
 
   .search{position:relative;margin-top:12px}
-  .search input{width:100%;padding:10px 36px;border:none;border-radius:10px;
-    background:#f2f3f5;font-size:14.5px;outline:none}
-  .search .ic{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--sub);font-size:15px}
-  .search .clr{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:#dfe1e5;
-    color:var(--sub);width:22px;height:22px;border-radius:50%;cursor:pointer;display:none;font-size:12px}
+  .search input{width:100%;padding:12px 38px;border:none;border-radius:999px;
+    background:var(--surface);color:var(--text);font-size:14.5px;outline:none;
+    box-shadow:var(--shadow);font-family:inherit;transition:box-shadow .15s}
+  .search input:focus{box-shadow:var(--shadow),0 0 0 2px color-mix(in srgb,var(--accent) 40%,transparent)}
+  .search input::placeholder{color:var(--sub2)}
+  .search .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--sub)}
+  .search .ic .i{width:15px;height:15px}
+  .search .clr{position:absolute;right:9px;top:50%;transform:translateY(-50%);border:none;background:var(--press);
+    color:var(--sub);width:24px;height:24px;border-radius:50%;cursor:pointer;display:none;font-size:12px}
 
-  .toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-  .tbtn{border:1px solid var(--line);background:#fff;border-radius:16px;padding:6px 12px;
-    font-size:12px;cursor:pointer;color:#40434a;font-weight:600}
-  .tbtn:active{background:#f2f3f5}
+  .toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+  .tbtn{border:none;background:var(--surface);border-radius:999px;padding:8px 13px;
+    font-size:12px;cursor:pointer;color:var(--text);font-weight:600;font-family:inherit;
+    display:inline-flex;align-items:center;gap:5px;box-shadow:var(--shadow);
+    transition:transform .1s}
+  .tbtn .i{width:13px;height:13px;color:var(--sub)}
+  .tbtn:active{transform:scale(.95);background:var(--press)}
 
   /* ===== 리스트 ===== */
-  .list{padding:4px 0 70px;flex:1}
+  .list{padding:2px 0 calc(80px + env(safe-area-inset-bottom));flex:1}
 
-  /* 부서 = 섹션 헤더 */
-  .dept{margin-top:2px}   /* 선 없이 라벨+여백으로 구분 (카카오 방식) */
-  .dept-head{display:flex;align-items:center;gap:8px;padding:16px 18px 6px;cursor:pointer;user-select:none}
-  .dept-head .dname{font-size:13px;color:#8b8f97;font-weight:600}
+  /* 부서 = 카드 */
+  .dept{margin:10px 14px 0;background:var(--surface);border-radius:20px;overflow:hidden;
+    box-shadow:var(--shadow)}
+  .dept-head{display:flex;align-items:center;gap:8px;padding:15px 16px;cursor:pointer;user-select:none}
+  .dept-head:active{background:var(--press)}
+  .dept-head .dname{font-size:14px;color:var(--text);font-weight:700;letter-spacing:-.2px}
   .dept-head .right{margin-left:auto;display:flex;align-items:center;gap:8px}
-  .dept-head .dcount{font-size:12.5px;color:var(--sub2)}
-  .dept-head .arw{font-size:11px;color:var(--sub2);transition:transform .25s}
+  .dept-head .dcount{font-size:12px;color:var(--sub);background:var(--field);
+    padding:2px 9px;border-radius:999px;font-weight:600}
+  .dept-head .arw{color:var(--sub2);display:grid;place-items:center;transition:transform .25s}
+  .dept-head .arw .i{width:14px;height:14px}
   .dept.open .dept-head .arw{transform:rotate(90deg)}
   .dept-tools{display:flex;gap:3px}
 
   .members{overflow:hidden;max-height:0;transition:max-height .3s ease}
-  .dept.open .members{max-height:9000px;padding:4px 0 8px}
+  .dept.open .members{max-height:9000px;padding:0 0 10px}
 
   /* 팀 = 소제목 */
-  .team-head{display:flex;align-items:center;gap:8px;padding:8px 18px 3px;
+  .team-head{display:flex;align-items:center;gap:7px;padding:10px 16px 4px;
     opacity:0;transform:translateY(6px)}
   .dept.open .team-head.show{animation:pop .3s ease forwards}
-  .team-head .tline{width:3px;height:12px;border-radius:2px;background:var(--accent);opacity:.55}
-  .team-head .tname{font-size:12px;color:#7a7f88;font-weight:700}
+  .team-head .tline{width:3px;height:11px;border-radius:2px;background:var(--accent);opacity:.6}
+  .team-head .tname{font-size:12px;color:var(--sub);font-weight:700}
 
-  /* 인원 = 친구 행 */
-  .m{display:flex;gap:12px;align-items:center;padding:9px 18px;cursor:default;
+  /* 인원 행 */
+  .m{display:flex;gap:12px;align-items:center;padding:10px 16px;cursor:default;
     opacity:0;transform:translateY(6px)}
-  .m.in-team{padding-left:26px}   /* 팀 소속은 살짝 들여쓰기 */
+  .m.in-team{padding-left:24px}
   .dept.open .m.show{animation:pop .3s ease forwards}
   @keyframes pop{to{opacity:1;transform:translateY(0)}}
-  .m:active{background:#f7f8fa}
-  .m .av{width:46px;height:46px;border-radius:17px;flex:none;display:grid;place-items:center;
-    color:#fff;font-weight:700;font-size:16px}
+  .m:active{background:var(--press)}
+  .m .av{width:46px;height:46px;border-radius:38%;flex:none;display:grid;place-items:center;
+    color:#fff;font-weight:700;font-size:15px;background:var(--av);
+    background:linear-gradient(140deg,color-mix(in srgb,var(--av) 72%,#fff) 0%,var(--av) 85%)}
+  @media (prefers-color-scheme: dark){
+    .m .av{background:linear-gradient(140deg,color-mix(in srgb,var(--av) 80%,#fff) 0%,color-mix(in srgb,var(--av) 80%,#000) 100%)}
+  }
   .m .info{flex:1;min-width:0}
   .m .r1{display:flex;align-items:baseline;gap:7px}
-  .m .nm{font-weight:700;font-size:15.5px}
-  .m .rk{font-size:12px;color:var(--accent);background:var(--accent-soft);padding:1px 8px;border-radius:20px}
+  .m .nm{font-weight:700;font-size:15.5px;letter-spacing:-.2px}
+  .m .rk{font-size:11.5px;color:var(--accent);background:var(--accent-soft);padding:1.5px 8px;border-radius:999px;font-weight:600}
   .m .duty{font-size:13px;color:var(--sub);margin-top:2px;line-height:1.4;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .m .tels{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
   .tel{display:inline-flex;align-items:center;gap:4px;font-size:12px;text-decoration:none;
-    font-weight:600;padding:3px 9px;border-radius:20px}
+    font-weight:600;padding:4px 10px;border-radius:999px}
+  .tel .i{width:11px;height:11px}
   .tel:active{opacity:.6}
   .tel.mob{color:var(--accent);background:var(--accent-soft)}
   .tel.ext{color:var(--ok);background:var(--ok-soft);cursor:default}
@@ -103,36 +149,50 @@
 
   /* 편집 컨트롤 */
   .rowtools{display:flex;gap:3px;margin-left:auto}
-  .mini{border:1px solid var(--line);background:#fafbfc;border-radius:8px;width:28px;height:28px;
-    font-size:12px;cursor:pointer;display:grid;place-items:center;color:var(--sub);flex:none}
-  .mini:active{background:#eef0f4}
-  .mini.del{color:var(--danger)}
-  .add-m{padding:6px 18px 2px}
-  .add-m button{width:100%;border:1px dashed var(--accent);color:var(--accent);background:var(--accent-soft);
-    border-radius:12px;padding:9px;font-size:12.5px;cursor:pointer;font-weight:600}
+  .mini{border:none;background:var(--field);border-radius:9px;width:28px;height:28px;
+    cursor:pointer;display:grid;place-items:center;color:var(--sub);flex:none;
+    transition:transform .1s}
+  .mini .i{width:13px;height:13px}
+  .mini:active{background:var(--press);transform:scale(.9)}
+  .mini.del{color:var(--danger);background:var(--danger-soft)}
+  .add-m{padding:8px 12px 4px}
+  .add-m button{width:100%;border:1.5px dashed color-mix(in srgb,var(--accent) 45%,transparent);
+    color:var(--accent);background:none;font-family:inherit;
+    border-radius:14px;padding:10px;font-size:12.5px;cursor:pointer;font-weight:600;
+    display:flex;align-items:center;justify-content:center;gap:5px}
+  .add-m button:active{background:var(--accent-soft)}
+  .add-m .i{width:12px;height:12px}
 
   .empty{text-align:center;color:var(--sub);padding:60px 20px;font-size:14px;display:none}
   .empty.show{display:block}
 
   /* 모달 */
-  .mask{position:fixed;inset:0;background:rgba(20,23,35,.45);z-index:50;display:none;
-    align-items:flex-end;justify-content:center}
+  .mask{position:fixed;inset:0;background:rgba(10,12,20,.5);z-index:50;display:none;
+    align-items:flex-end;justify-content:center;
+    -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
   .mask.show{display:flex}
-  .sheet{width:100%;max-width:440px;background:#fff;border-radius:20px 20px 0 0;padding:18px 18px 24px;
-    max-height:92vh;overflow:auto;animation:up .25s ease}
-  @keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:translateY(0);opacity:1}}
-  .sheet h3{margin:2px 0 14px;font-size:17px}
+  .sheet{width:100%;max-width:440px;background:var(--surface);border-radius:24px 24px 0 0;
+    padding:12px 18px calc(24px + env(safe-area-inset-bottom));
+    max-height:92vh;overflow:auto;animation:up .3s cubic-bezier(.2,.9,.3,1)}
+  .sheet::before{content:"";display:block;width:44px;height:5px;border-radius:3px;
+    background:var(--sub2);opacity:.45;margin:0 auto 16px}
+  @keyframes up{from{transform:translateY(40px);opacity:.5}to{transform:translateY(0);opacity:1}}
+  .sheet h3{margin:2px 0 16px;font-size:17px;letter-spacing:-.3px}
   .fld{margin-bottom:12px}
-  .fld label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:5px;font-weight:600}
-  .fld input,.fld select,.fld textarea{width:100%;padding:11px 12px;border:1px solid #e5e8ee;
-    border-radius:11px;font-size:15px;outline:none;font-family:inherit;background:#fff}
-  .fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--accent)}
+  .fld label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:6px;font-weight:600}
+  .fld input,.fld select,.fld textarea{width:100%;padding:12px 13px;border:none;
+    border-radius:13px;font-size:15px;outline:none;font-family:inherit;
+    background:var(--field);color:var(--text);transition:box-shadow .15s}
+  .fld input:focus,.fld select:focus,.fld textarea:focus{
+    box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent)}
   .fld textarea{resize:vertical;min-height:56px}
-  .sheet-btns{display:flex;gap:8px;margin-top:6px}
-  .sheet-btns button{flex:1;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;border:none}
+  .sheet-btns{display:flex;gap:8px;margin-top:10px}
+  .sheet-btns button{flex:1;padding:14px;border-radius:14px;font-size:15px;font-weight:700;
+    cursor:pointer;border:none;font-family:inherit;transition:transform .1s}
+  .sheet-btns button:active{transform:scale(.97)}
   .b-save{background:var(--accent);color:#fff}
-  .b-cancel{background:#eef0f4;color:var(--text)}
-  .b-del{background:#fdecef;color:var(--danger);flex:0 0 auto;padding:13px 16px}
+  .b-cancel{background:var(--field);color:var(--text)}
+  .b-del{background:var(--danger-soft);color:var(--danger);flex:0 0 auto;padding:14px 18px}
 </style>
 </head>
 <body>
@@ -142,19 +202,19 @@
       <div class="logo" id="coLogo">G</div>
       <div class="ttl" id="coTitle"><b id="coName">GroovePlay</b><span id="hdrCount"></span></div>
       <div class="acts">
-        <button class="icobtn" id="editToggle" title="편집">✏️</button>
+        <button class="icobtn" id="editToggle" title="편집"></button>
       </div>
     </div>
     <div class="search">
-      <span class="ic">🔍</span>
+      <span class="ic"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
       <input id="q" type="text" placeholder="이름 · 핸드폰 · 내선 · 업무 검색" autocomplete="off">
       <button class="clr" id="clr">✕</button>
     </div>
     <div class="toolbar">
-      <button class="tbtn" id="addDept" style="display:none">＋ 부서 추가</button>
-      <button class="tbtn" id="exportBtn">⬇ 엑셀 내보내기</button>
-      <button class="tbtn" id="importBtn">⬆ 엑셀 불러오기</button>
-      <button class="tbtn" id="resetBtn" style="display:none">↺ 초기화</button>
+      <button class="tbtn" id="addDept" style="display:none"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>부서 추가</button>
+      <button class="tbtn" id="exportBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12m0 0l-5-5m5 5l5-5"/><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/></svg>엑셀 내보내기</button>
+      <button class="tbtn" id="importBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 15V3m0 0L7 8m5-5l5 5"/><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/></svg>엑셀 불러오기</button>
+      <button class="tbtn" id="resetBtn" style="display:none"><svg class="i" viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.5 15a9 9 0 102.1-9.4L1 10"/></svg>초기화</button>
       <input type="file" id="importFile" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none">
     </div>
   </div>
@@ -168,7 +228,7 @@
   <div class="sheet">
     <h3 id="mTitle">멤버 추가</h3>
     <div class="fld"><label>부서</label><select id="fDept"></select></div>
-    <div class="fld"><label>팀 <span style="color:#b0b4bb;font-weight:400">(선택 · 비우면 부서 직속)</span></label><input id="fTeam" placeholder="예: 서버팀" list="teamList"><datalist id="teamList"></datalist></div>
+    <div class="fld"><label>팀 <span style="color:var(--sub2);font-weight:400">(선택 · 비우면 부서 직속)</span></label><input id="fTeam" placeholder="예: 서버팀" list="teamList"><datalist id="teamList"></datalist></div>
     <div class="fld"><label>이름</label><input id="fName" placeholder="예: 홍길동"></div>
     <div class="fld"><label>직급</label><input id="fRank" placeholder="예: 과장"></div>
     <div class="fld"><label>핸드폰</label><input id="fMobile" placeholder="예: 010-0000-0000" inputmode="tel"></div>
@@ -267,6 +327,19 @@ function applyName(){
   document.title = COMPANY + " 조직도";
 }
 
+// ---------- SVG 아이콘 ----------
+const IC = {
+  up:    '<svg class="i" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>',
+  down:  '<svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+  chev:  '<svg class="i" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>',
+  pen:   '<svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+  check: '<svg class="i" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>',
+  trash: '<svg class="i" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>',
+  plus:  '<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  phone: '<svg class="i" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg>',
+  call:  '<svg class="i" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.4 2.1L8.1 9.9a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.4c.9.3 1.9.6 2.8.7a2 2 0 011.7 2z"/></svg>',
+};
+
 // ---------- 유틸 ----------
 const COLORS = ["#3b5bff","#7a4bff","#e0518a","#f0883e","#2fae72","#0ea5b5","#8b5cf6","#d9455f"];
 function colorFor(s){let h=0;for(const c of s)h=c.charCodeAt(0)+((h<<5)-h);return COLORS[Math.abs(h)%COLORS.length];}
@@ -314,10 +387,10 @@ function render(){
 
     const deptTools = editMode ? `
       <span class="dept-tools" onclick="event.stopPropagation()">
-        <button class="mini" onclick="moveDept(${di},-1)" title="위로">▲</button>
-        <button class="mini" onclick="moveDept(${di},1)" title="아래로">▼</button>
-        <button class="mini" onclick="openDeptEdit(${di})" title="부서명 수정">✏️</button>
-        <button class="mini del" onclick="delDept(${di})" title="부서 삭제">🗑</button>
+        <button class="mini" onclick="moveDept(${di},-1)" title="위로">${IC.up}</button>
+        <button class="mini" onclick="moveDept(${di},1)" title="아래로">${IC.down}</button>
+        <button class="mini" onclick="openDeptEdit(${di})" title="부서명 수정">${IC.pen}</button>
+        <button class="mini del" onclick="delDept(${di})" title="부서 삭제">${IC.trash}</button>
       </span>` : '';
 
     dept.innerHTML=`
@@ -325,7 +398,7 @@ function render(){
         <span class="dname">${esc(d.dept)}</span>
         <span class="right">
           <span class="dcount">${query?filtered.length:d.members.length}</span>
-          ${editMode?deptTools:'<span class="arw">▶</span>'}
+          ${editMode?deptTools:'<span class="arw">'+IC.chev+'</span>'}
         </span>
       </div>
       <div class="members"></div>`;
@@ -354,16 +427,16 @@ function render(){
 
       const rowTools = editMode ? `
         <span class="rowtools">
-          <button class="mini" onclick="moveMember(${di},${mi},-1)" title="위로">▲</button>
-          <button class="mini" onclick="moveMember(${di},${mi},1)" title="아래로">▼</button>
-          <button class="mini" onclick="openMemberEdit(${di},${mi})" title="수정">✏️</button>
+          <button class="mini" onclick="moveMember(${di},${mi},-1)" title="위로">${IC.up}</button>
+          <button class="mini" onclick="moveMember(${di},${mi},1)" title="아래로">${IC.down}</button>
+          <button class="mini" onclick="openMemberEdit(${di},${mi})" title="수정">${IC.pen}</button>
         </span>` : '';
 
-      const extChip = m.ext ? `<span class="tel ext">☎ 내선 ${hl(m.ext,query)}</span>` : '';
-      const mobChip = m.mobile ? `<a class="tel mob" href="tel:${(m.mobile||'').replace(/[^0-9+]/g,'')}">📱 ${hl(m.mobile,query)}</a>` : '';
+      const extChip = m.ext ? `<span class="tel ext">${IC.call} 내선 ${hl(m.ext,query)}</span>` : '';
+      const mobChip = m.mobile ? `<a class="tel mob" href="tel:${(m.mobile||'').replace(/[^0-9+]/g,'')}">${IC.phone} ${hl(m.mobile,query)}</a>` : '';
 
       el.innerHTML=`
-        <div class="av" style="background:${colorFor(m.name||'?')}">${esc((m.name||'?').slice(-2))}</div>
+        <div class="av" style="--av:${colorFor(m.name||'?')}">${esc((m.name||'?').slice(-2))}</div>
         <div class="info">
           <div class="r1"><span class="nm">${hl(m.name,query)}</span><span class="rk">${hl(m.rank,query)}</span>${rowTools}</div>
           <div class="duty">${hl(m.duty,query)}</div>
@@ -375,7 +448,7 @@ function render(){
     if(editMode){
       const add=document.createElement('div');
       add.className='add-m';
-      add.innerHTML=`<button onclick="openMemberAdd(${di})">＋ ${esc(d.dept)}에 인원 추가</button>`;
+      add.innerHTML=`<button onclick="openMemberAdd(${di})">${IC.plus}${esc(d.dept)}에 인원 추가</button>`;
       mm.appendChild(add);
     }
     list.appendChild(dept);
@@ -518,10 +591,11 @@ document.getElementById('dDelete').onclick=()=>{
 const editToggle=document.getElementById('editToggle');
 const addDeptBtn=document.getElementById('addDept');
 const resetBtn=document.getElementById('resetBtn');
+function applyEditIcon(){ editToggle.innerHTML = editMode ? IC.check : IC.pen; }
 editToggle.onclick=()=>{
   editMode=!editMode;
   editToggle.classList.toggle('on',editMode);
-  editToggle.textContent=editMode?'✓':'✏️';
+  applyEditIcon();
   addDeptBtn.style.display=editMode?'inline-flex':'none';
   resetBtn.style.display=editMode?'inline-flex':'none';
   coTitle.classList.toggle('editable',editMode);
@@ -641,6 +715,7 @@ q.addEventListener('input',render);
 clr.addEventListener('click',()=>{q.value='';render();q.focus();});
 
 applyName();
+applyEditIcon();
 render();
 
 // ---------- PWA: 서비스워커 등록 ----------

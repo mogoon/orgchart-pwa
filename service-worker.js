@@ -1,5 +1,5 @@
 /* GroovePlay 조직도 PWA service worker */
-const CACHE = "grooveplay-org-v4";
+const CACHE = "grooveplay-org-v5";
 const ASSETS = [
   "./",
   "./index.html",
@@ -33,8 +33,11 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
-  // 앱 자산과 xlsx CDN만 처리 — 그 외 요청은 브라우저 기본 동작
-  if (url.origin !== self.location.origin && e.request.url !== XLSX_CDN) return;
+  // 앱 자산 · xlsx CDN · 폰트 CDN만 처리 — 그 외 요청은 브라우저 기본 동작
+  const allowed = url.origin === self.location.origin ||
+                  e.request.url === XLSX_CDN ||
+                  url.origin === "https://cdn.jsdelivr.net";
+  if (!allowed) return;
   e.respondWith(
     caches.match(e.request).then(hit => {
       if (hit) return hit;
