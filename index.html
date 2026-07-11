@@ -171,7 +171,7 @@
     <div class="fld"><label>팀 <span style="color:#b0b4bb;font-weight:400">(선택 · 비우면 부서 직속)</span></label><input id="fTeam" placeholder="예: 서버팀" list="teamList"><datalist id="teamList"></datalist></div>
     <div class="fld"><label>이름</label><input id="fName" placeholder="예: 홍길동"></div>
     <div class="fld"><label>직급</label><input id="fRank" placeholder="예: 과장"></div>
-    <div class="fld"><label>핸드폰</label><input id="fMobile" placeholder="예: 010-1234-5678" inputmode="tel"></div>
+    <div class="fld"><label>핸드폰</label><input id="fMobile" placeholder="예: 010-0000-0000" inputmode="tel"></div>
     <div class="fld"><label>내선번호</label><input id="fExt" placeholder="예: 101" inputmode="numeric"></div>
     <div class="fld"><label>담당 업무</label><textarea id="fDuty" placeholder="예: 인사·채용, 근태 관리"></textarea></div>
     <div class="sheet-btns">
@@ -199,33 +199,33 @@
 // ---------- 기본(초기) 조직 데이터 ----------
 const DEFAULT_ORG = [
   { dept:"경영지원실", members:[
-    {name:"김도현", rank:"실장", team:"", mobile:"010-2211-3300", ext:"101", duty:"경영 총괄, 예산·인사 승인"},
-    {name:"박수민", rank:"과장", team:"인사팀", mobile:"010-2211-3311", ext:"102", duty:"인사·채용, 4대보험, 근태 관리"},
-    {name:"이정우", rank:"대리", team:"재무팀", mobile:"010-2211-3322", ext:"103", duty:"회계·세무, 법인카드 정산"},
-    {name:"최유나", rank:"주임", team:"총무팀", mobile:"010-2211-3333", ext:"104", duty:"총무, 비품 구매, 사무실 관리"},
+    {name:"김도현", rank:"실장", team:"", mobile:"010-0000-0000", ext:"101", duty:"경영 총괄, 예산·인사 승인"},
+    {name:"박수민", rank:"과장", team:"인사팀", mobile:"010-0000-0000", ext:"102", duty:"인사·채용, 4대보험, 근태 관리"},
+    {name:"이정우", rank:"대리", team:"재무팀", mobile:"010-0000-0000", ext:"103", duty:"회계·세무, 법인카드 정산"},
+    {name:"최유나", rank:"주임", team:"총무팀", mobile:"010-0000-0000", ext:"104", duty:"총무, 비품 구매, 사무실 관리"},
   ]},
   { dept:"개발본부", members:[
-    {name:"정태영", rank:"본부장", team:"", mobile:"010-5566-1000", ext:"201", duty:"개발 총괄, 기술 로드맵"},
-    {name:"한지훈", rank:"팀장", team:"클라이언트팀", mobile:"010-5566-1010", ext:"210", duty:"유니티 클라이언트 개발"},
-    {name:"오세라", rank:"선임", team:"클라이언트팀", mobile:"010-5566-1011", ext:"211", duty:"게임 UI/UX 구현, 인게임 이펙트"},
-    {name:"강민석", rank:"팀장", team:"서버팀", mobile:"010-5566-1020", ext:"220", duty:"게임 서버·매칭 시스템"},
-    {name:"윤하람", rank:"선임", team:"서버팀", mobile:"010-5566-1021", ext:"221", duty:"백엔드 API, DB 설계, 결제 서버"},
+    {name:"정태영", rank:"본부장", team:"", mobile:"010-0000-0000", ext:"201", duty:"개발 총괄, 기술 로드맵"},
+    {name:"한지훈", rank:"팀장", team:"클라이언트팀", mobile:"010-0000-0000", ext:"210", duty:"유니티 클라이언트 개발"},
+    {name:"오세라", rank:"선임", team:"클라이언트팀", mobile:"010-0000-0000", ext:"211", duty:"게임 UI/UX 구현, 인게임 이펙트"},
+    {name:"강민석", rank:"팀장", team:"서버팀", mobile:"010-0000-0000", ext:"220", duty:"게임 서버·매칭 시스템"},
+    {name:"윤하람", rank:"선임", team:"서버팀", mobile:"010-0000-0000", ext:"221", duty:"백엔드 API, DB 설계, 결제 서버"},
   ]},
   { dept:"기획실", members:[
-    {name:"송재원", rank:"실장", team:"", mobile:"010-7788-2000", ext:"301", duty:"게임 기획 총괄, 밸런스 설계"},
-    {name:"임소정", rank:"과장", team:"콘텐츠기획팀", mobile:"010-7788-2011", ext:"302", duty:"레벨 디자인, 콘텐츠 기획"},
-    {name:"배준호", rank:"대리", team:"시스템기획팀", mobile:"010-7788-2022", ext:"303", duty:"시스템 기획, 확률·경제 설계"},
+    {name:"송재원", rank:"실장", team:"", mobile:"010-0000-0000", ext:"301", duty:"게임 기획 총괄, 밸런스 설계"},
+    {name:"임소정", rank:"과장", team:"콘텐츠기획팀", mobile:"010-0000-0000", ext:"302", duty:"레벨 디자인, 콘텐츠 기획"},
+    {name:"배준호", rank:"대리", team:"시스템기획팀", mobile:"010-0000-0000", ext:"303", duty:"시스템 기획, 확률·경제 설계"},
   ]},
   { dept:"아트실", members:[
-    {name:"신예진", rank:"실장", team:"", mobile:"010-3344-5000", ext:"401", duty:"아트 디렉션, 원화·컨셉 총괄"},
-    {name:"권도윤", rank:"선임", team:"3D팀", mobile:"010-3344-5011", ext:"402", duty:"캐릭터 3D 모델링, 애니메이션"},
-    {name:"문가영", rank:"주임", team:"원화팀", mobile:"010-3344-5022", ext:"403", duty:"배경 원화, 인게임 아이콘"},
+    {name:"신예진", rank:"실장", team:"", mobile:"010-0000-0000", ext:"401", duty:"아트 디렉션, 원화·컨셉 총괄"},
+    {name:"권도윤", rank:"선임", team:"3D팀", mobile:"010-0000-0000", ext:"402", duty:"캐릭터 3D 모델링, 애니메이션"},
+    {name:"문가영", rank:"주임", team:"원화팀", mobile:"010-0000-0000", ext:"403", duty:"배경 원화, 인게임 아이콘"},
   ]},
   { dept:"사업실", members:[
-    {name:"조현우", rank:"실장", team:"", mobile:"010-9900-6000", ext:"501", duty:"퍼블리싱, 사업 제휴, 계약"},
-    {name:"홍채린", rank:"과장", team:"마케팅팀", mobile:"010-9900-6011", ext:"502", duty:"마케팅, 광고 집행, SNS 운영"},
-    {name:"서동욱", rank:"대리", team:"운영팀", mobile:"010-9900-6022", ext:"503", duty:"CS·고객대응, 커뮤니티 관리"},
-    {name:"남지아", rank:"주임", team:"운영팀", mobile:"010-9900-6033", ext:"504", duty:"스토어 운영, 앱 심사 대응"},
+    {name:"조현우", rank:"실장", team:"", mobile:"010-0000-0000", ext:"501", duty:"퍼블리싱, 사업 제휴, 계약"},
+    {name:"홍채린", rank:"과장", team:"마케팅팀", mobile:"010-0000-0000", ext:"502", duty:"마케팅, 광고 집행, SNS 운영"},
+    {name:"서동욱", rank:"대리", team:"운영팀", mobile:"010-0000-0000", ext:"503", duty:"CS·고객대응, 커뮤니티 관리"},
+    {name:"남지아", rank:"주임", team:"운영팀", mobile:"010-0000-0000", ext:"504", duty:"스토어 운영, 앱 심사 대응"},
   ]},
 ];
 
