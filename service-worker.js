@@ -1,5 +1,5 @@
 /* GroovePlay 조직도 PWA service worker */
-const CACHE = "grooveplay-org-v5";
+const CACHE = "grooveplay-org-v6";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,15 +9,11 @@ const ASSETS = [
   "./icon-maskable-512.png",
   "./apple-touch-icon.png"
 ];
-const XLSX_CDN = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
 
 self.addEventListener("install", e => {
   e.waitUntil(
-    caches.open(CACHE).then(c =>
-      c.addAll(ASSETS)
-        // CDN 스크립트는 실패해도 설치를 막지 않음 (온라인 시 fetch 핸들러가 다시 캐시)
-        .then(() => c.add(XLSX_CDN).catch(() => {}))
-    ).then(() => self.skipWaiting())
+    caches.open(CACHE).then(c => c.addAll(ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -33,9 +29,8 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
-  // 앱 자산 · xlsx CDN · 폰트 CDN만 처리 — 그 외 요청은 브라우저 기본 동작
+  // 앱 자산 · 폰트 CDN만 처리 — 그 외 요청은 브라우저 기본 동작
   const allowed = url.origin === self.location.origin ||
-                  e.request.url === XLSX_CDN ||
                   url.origin === "https://cdn.jsdelivr.net";
   if (!allowed) return;
   e.respondWith(

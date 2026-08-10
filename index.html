@@ -18,10 +18,6 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" crossorigin="anonymous"
   href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<!-- Excel 처리 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
-  integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA=="
-  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
   :root{
     color-scheme:light dark;
@@ -126,6 +122,15 @@
   .dept.open .m.show{animation:pop .3s ease forwards}
   @keyframes pop{to{opacity:1;transform:translateY(0)}}
   .m:active{background:var(--press)}
+  /* 드래그(편집 모드, 마우스) */
+  .editing .m,.editing .dept-head{cursor:grab}
+  .editing .m:active,.editing .dept-head:active{cursor:grabbing}
+  .m.dragging,.dept.dragging{opacity:.4}
+  .m.dz-before{box-shadow:inset 0 3px 0 var(--accent)}
+  .m.dz-after{box-shadow:inset 0 -3px 0 var(--accent)}
+  .dept.dz-into{outline:2px dashed var(--accent);outline-offset:-2px}
+  .dept.dz-before{box-shadow:0 -4px 0 var(--accent),var(--shadow)}
+  .dept.dz-after{box-shadow:0 4px 0 var(--accent),var(--shadow)}
   .m .av{width:46px;height:46px;border-radius:38%;flex:none;display:grid;place-items:center;
     color:#fff;font-weight:700;font-size:15px;background:var(--av);
     background:linear-gradient(140deg,color-mix(in srgb,var(--av) 72%,#fff) 0%,var(--av) 85%)}
@@ -212,10 +217,10 @@
     </div>
     <div class="toolbar">
       <button class="tbtn" id="addDept" style="display:none"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>부서 추가</button>
-      <button class="tbtn" id="exportBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12m0 0l-5-5m5 5l5-5"/><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/></svg>엑셀 내보내기</button>
-      <button class="tbtn" id="importBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 15V3m0 0L7 8m5-5l5 5"/><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/></svg>엑셀 불러오기</button>
+      <button class="tbtn" id="exportBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12m0 0l-5-5m5 5l5-5"/><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/></svg>백업(JSON)</button>
+      <button class="tbtn" id="importBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 15V3m0 0L7 8m5-5l5 5"/><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/></svg>복원(JSON)</button>
       <button class="tbtn" id="resetBtn" style="display:none"><svg class="i" viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.5 15a9 9 0 102.1-9.4L1 10"/></svg>초기화</button>
-      <input type="file" id="importFile" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none">
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none">
     </div>
   </div>
 
@@ -323,8 +328,25 @@ function loadName(){
 function saveName(){ try{ localStorage.setItem(NAME_KEY, COMPANY); }catch(e){} }
 function applyName(){
   document.getElementById('coName').textContent = COMPANY;
-  document.getElementById('coLogo').textContent = (COMPANY.trim()[0]||'G').toUpperCase();
+  const letter=(COMPANY.trim()[0]||'G').toUpperCase();
+  document.getElementById('coLogo').textContent = letter;
   document.title = COMPANY + " 조직도";
+  setFavicon(letter);
+}
+// 회사명 첫 글자로 브라우저 탭 아이콘(파비콘)을 즉석 생성
+function setFavicon(letter){
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'+
+    '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'+
+    '<stop offset="0" stop-color="#3b5bff"/><stop offset="1" stop-color="#7a4bff"/>'+
+    '</linearGradient></defs>'+
+    '<rect width="64" height="64" rx="16" fill="url(#g)"/>'+
+    '<text x="32" y="35" font-family="system-ui,-apple-system,sans-serif" font-size="38" '+
+    'font-weight="700" fill="#fff" text-anchor="middle" dominant-baseline="central">'+
+    esc(letter)+'</text></svg>';
+  let link=document.getElementById('favicon');
+  if(!link){ link=document.createElement('link'); link.id='favicon'; link.rel='icon'; document.head.appendChild(link); }
+  link.type='image/svg+xml';
+  link.href='data:image/svg+xml,'+encodeURIComponent(svg);
 }
 
 // ---------- SVG 아이콘 ----------
@@ -382,8 +404,10 @@ function render(){
     anyResult=true;
 
     const open = editMode ? true : (query ? true : (openState[di]||false));
+    const canDrag = editMode && !query;
     const dept=document.createElement('div');
     dept.className='dept'+(open?' open':'');
+    dept.dataset.di=di;
 
     const deptTools = editMode ? `
       <span class="dept-tools" onclick="event.stopPropagation()">
@@ -402,6 +426,8 @@ function render(){
         </span>
       </div>
       <div class="members"></div>`;
+
+    if(canDrag) dept.querySelector('.dept-head').draggable=true;
 
     const mm=dept.querySelector('.members');
     let curTeam=null;
@@ -423,6 +449,8 @@ function render(){
 
       const el=document.createElement('div');
       el.className='m'+(team?' in-team':'');
+      el.dataset.di=di; el.dataset.mi=mi;
+      if(canDrag) el.draggable=true;
       if(open){el.classList.add('show');el.style.animationDelay=(idx*45)+'ms';}
 
       const rowTools = editMode ? `
@@ -433,7 +461,7 @@ function render(){
         </span>` : '';
 
       const extChip = m.ext ? `<span class="tel ext">${IC.call} 내선 ${hl(m.ext,query)}</span>` : '';
-      const mobChip = m.mobile ? `<a class="tel mob" href="tel:${(m.mobile||'').replace(/[^0-9+]/g,'')}">${IC.phone} ${hl(m.mobile,query)}</a>` : '';
+      const mobChip = m.mobile ? `<a class="tel mob" draggable="false" href="tel:${(m.mobile||'').replace(/[^0-9+]/g,'')}">${IC.phone} ${hl(m.mobile,query)}</a>` : '';
 
       el.innerHTML=`
         <div class="av" style="--av:${colorFor(m.name||'?')}">${esc((m.name||'?').slice(-2))}</div>
@@ -480,6 +508,105 @@ function moveMember(di,mi,dir){
 function delDept(di){
   if(!confirm(`"${ORG[di].dept}" 부서와 소속 인원을 모두 삭제할까요?`)) return;
   ORG.splice(di,1); save(); render();
+}
+
+// ---------- 드래그 앤 드롭 (편집 모드 · 마우스) ----------
+let dragCtx=null;
+function clearDropHints(){
+  list.querySelectorAll('.dz-before,.dz-after,.dz-into')
+      .forEach(el=>el.classList.remove('dz-before','dz-after','dz-into'));
+}
+function cleanupDrag(){
+  clearDropHints();
+  list.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging'));
+  dragCtx=null;
+}
+function isBefore(el,y){ const r=el.getBoundingClientRect(); return y < r.top + r.height/2; }
+
+list.addEventListener('dragstart',e=>{
+  if(!editMode || q.value.trim()){ e.preventDefault(); return; }
+  const m=e.target.closest('.m');
+  if(m){
+    dragCtx={type:'member', di:+m.dataset.di, mi:+m.dataset.mi};
+    m.classList.add('dragging');
+  }else{
+    const dh=e.target.closest('.dept-head');
+    if(!dh){ e.preventDefault(); return; }
+    const d=dh.closest('.dept');
+    dragCtx={type:'dept', di:+d.dataset.di};
+    d.classList.add('dragging');
+  }
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain','');   // Firefox는 데이터가 있어야 드래그 시작
+});
+
+list.addEventListener('dragover',e=>{
+  if(!dragCtx) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  clearDropHints();
+  if(dragCtx.type==='member'){
+    const overM=e.target.closest('.m');
+    if(overM){
+      overM.classList.add(isBefore(overM,e.clientY)?'dz-before':'dz-after');
+    }else{
+      const overD=e.target.closest('.dept');
+      if(overD) overD.classList.add('dz-into');
+    }
+  }else{
+    const overD=e.target.closest('.dept');
+    if(overD && +overD.dataset.di!==dragCtx.di){
+      overD.classList.add(isBefore(overD,e.clientY)?'dz-before':'dz-after');
+    }
+  }
+});
+
+list.addEventListener('drop',e=>{
+  if(!dragCtx) return;
+  e.preventDefault();
+  if(dragCtx.type==='member') dropMember(e);
+  else dropDept(e);
+  cleanupDrag();
+});
+list.addEventListener('dragend',cleanupDrag);
+
+function dropMember(e){
+  const src=dragCtx;
+  const rec=ORG[src.di].members[src.mi];
+  if(!rec) return;
+  let destDi, destIndex;
+  const overM=e.target.closest('.m');
+  if(overM){
+    destDi=+overM.dataset.di;
+    const destMi=+overM.dataset.mi;
+    destIndex=isBefore(overM,e.clientY)?destMi:destMi+1;
+  }else{
+    const overD=e.target.closest('.dept');
+    if(!overD) return;
+    destDi=+overD.dataset.di;
+    destIndex=ORG[destDi].members.length;
+  }
+  ORG[src.di].members.splice(src.mi,1);
+  if(destDi===src.di && src.mi<destIndex) destIndex--;   // 같은 부서 내 앞쪽 제거 보정
+  ORG[destDi].members.splice(destIndex,0,rec);
+  if(destDi!==src.di){
+    // 다른 부서로 이동: 팀 그룹끼리 모이도록 정리(수정 모달과 동일 동작)
+    ORG[destDi].members=normalizeTeams(ORG[destDi].members);
+  }
+  save(); render();
+}
+
+function dropDept(e){
+  const from=dragCtx.di;
+  const overD=e.target.closest('.dept');
+  if(!overD) return;
+  const to=+overD.dataset.di;
+  if(to===from) return;
+  let insertAt=isBefore(overD,e.clientY)?to:to+1;
+  const [d]=ORG.splice(from,1);
+  if(from<insertAt) insertAt--;
+  ORG.splice(insertAt,0,d);
+  save(); render();
 }
 
 // 같은 팀끼리 모이도록 부서 내 인원을 팀 첫 등장 순서로 안정 정렬
@@ -599,6 +726,7 @@ editToggle.onclick=()=>{
   addDeptBtn.style.display=editMode?'inline-flex':'none';
   resetBtn.style.display=editMode?'inline-flex':'none';
   coTitle.classList.toggle('editable',editMode);
+  list.classList.toggle('editing',editMode);
   render();
 };
 addDeptBtn.onclick=openDeptAdd;
@@ -613,37 +741,36 @@ coTitle.onclick=()=>{
   COMPANY=nm; saveName(); applyName();
 };
 
-// ---------- 엑셀 내보내기 / 불러오기 / 초기화 ----------
-const COLS = ["부서","팀","이름","직급","핸드폰","내선번호","담당업무"];
-
+// ---------- 백업(JSON) / 복원(JSON) / 초기화 ----------
 function fileStamp(){
   const d=new Date(), p=n=>String(n).padStart(2,'0');
   return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}`;
 }
 
 document.getElementById('exportBtn').onclick=()=>{
-  if(typeof XLSX==='undefined'){ alert('엑셀 모듈을 불러오지 못했습니다. 인터넷 연결 후 다시 시도하세요.'); return; }
-  // 조직도 시트
-  const rows=[COLS];
-  ORG.forEach(d=>d.members.forEach(m=>{
-    rows.push([d.dept, m.team||'', m.name||'', m.rank||'', m.mobile||'', m.ext||'', m.duty||'']);
-  }));
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:14},{wch:13},{wch:10},{wch:9},{wch:16},{wch:9},{wch:40}];
-  XLSX.utils.book_append_sheet(wb, ws, "조직도");
-  // 설정 시트 (회사명)
-  const cfg=XLSX.utils.aoa_to_sheet([["항목","값"],["회사명",COMPANY]]);
-  cfg['!cols']=[{wch:12},{wch:24}];
-  XLSX.utils.book_append_sheet(wb, cfg, "설정");
-  XLSX.writeFile(wb, `${COMPANY}_조직도_${fileStamp()}.xlsx`);
+  const data={
+    app:"조직도",
+    version:1,
+    exportedAt:new Date().toISOString(),
+    company:COMPANY,
+    org:ORG.map(d=>({
+      dept:d.dept,
+      members:(d.members||[]).map(m=>({
+        name:m.name||'', rank:m.rank||'', team:m.team||'',
+        mobile:m.mobile||'', ext:m.ext||'', duty:m.duty||''
+      }))
+    }))
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`${COMPANY}_조직도_${fileStamp()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 };
 
 const importFile=document.getElementById('importFile');
-document.getElementById('importBtn').onclick=()=>{
-  if(typeof XLSX==='undefined'){ alert('엑셀 모듈을 불러오지 못했습니다. 인터넷 연결 후 다시 시도하세요.'); return; }
-  importFile.click();
-};
+document.getElementById('importBtn').onclick=()=>{ importFile.click(); };
 
 // 헤더 이름의 다양한 표기를 허용
 function pick(row, keys){
@@ -655,53 +782,73 @@ function pick(row, keys){
 }
 function cell(v){ return (v==null?'':String(v)).trim(); }
 
+// 다양한 형태의 JSON을 { org:[{dept,members}], company } 형태로 정규화
+function parseBackup(data){
+  let company=null, list=null;
+
+  if(Array.isArray(data)){
+    // 최상위가 배열: 부서 배열이거나 평면 행 배열
+    list=data;
+  }else if(data && typeof data==='object'){
+    company = data.company || data.회사명 || data.name || null;
+    list = data.org || data.조직도 || data.departments || data.rows || data.members || null;
+  }
+  if(!Array.isArray(list) || !list.length) throw new Error('데이터 없음');
+
+  const map=new Map(); const order=[];
+  const addRec=(dept, rec)=>{
+    dept = cell(dept) || "미분류";
+    if(!rec.name && !rec.mobile && !rec.ext && !rec.duty) return; // 빈 행 skip
+    if(!map.has(dept)){ map.set(dept,[]); order.push(dept); }
+    map.get(dept).push(rec);
+  };
+  const toRec=row=>({
+    name:   cell(pick(row,["이름","성명","name","성함"])),
+    rank:   cell(pick(row,["직급","직책","직위","rank","title"])),
+    team:   cell(pick(row,["팀","팀명","team","파트","그룹"])),
+    mobile: cell(pick(row,["핸드폰","휴대폰","휴대전화","전화","전화번호","mobile","phone","연락처"])),
+    ext:    cell(pick(row,["내선번호","내선","ext","extension"])),
+    duty:   cell(pick(row,["담당업무","업무","담당","duty","role","직무"])),
+  });
+
+  list.forEach(item=>{
+    if(item && Array.isArray(item.members)){
+      // 부서 객체 { dept, members:[...] }
+      const dept = item.dept || item.부서 || item.department || item.name;
+      item.members.forEach(m=>addRec(dept, toRec(m)));
+    }else if(item && typeof item==='object'){
+      // 평면 행 { 부서, 이름, ... }
+      const dept = pick(item,["부서","부서명","department","dept","본부","소속"]);
+      addRec(dept, toRec(item));
+    }
+  });
+  if(!order.length) throw new Error('데이터 없음');
+
+  return {
+    company,
+    org: order.map(d=>({dept:d, members:normalizeTeams(map.get(d))}))
+  };
+}
+
 importFile.onchange=e=>{
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
   r.onload=()=>{
     try{
-      const wb=XLSX.read(r.result,{type:'array'});
-      // 조직도 시트 찾기 (없으면 첫 시트)
-      const shName = wb.SheetNames.find(n=>/조직|org|명단|연락/i.test(n)) || wb.SheetNames[0];
-      const json = XLSX.utils.sheet_to_json(wb.Sheets[shName], {defval:''});
-      if(!json.length) throw new Error('빈 시트');
+      const data=JSON.parse(r.result);
+      const {company, org}=parseBackup(data);
 
-      const map=new Map(); const order=[];
-      json.forEach(row=>{
-        const dept = cell(pick(row,["부서","부서명","department","dept","본부","소속"])) || "미분류";
-        const name = cell(pick(row,["이름","성명","name","성함"]));
-        if(!name && !cell(pick(row,["핸드폰","내선번호","담당업무"]))) return; // 빈 행 skip
-        const rec={
-          name,
-          rank:   cell(pick(row,["직급","직책","직위","rank","title"])),
-          team:   cell(pick(row,["팀","팀명","team","파트","그룹"])),
-          mobile: cell(pick(row,["핸드폰","휴대폰","휴대전화","전화","전화번호","mobile","phone","연락처"])),
-          ext:    cell(pick(row,["내선번호","내선","ext","extension"])),
-          duty:   cell(pick(row,["담당업무","업무","담당","duty","role","직무"])),
-        };
-        if(!map.has(dept)){ map.set(dept,[]); order.push(dept); }
-        map.get(dept).push(rec);
-      });
-      if(!order.length) throw new Error('데이터 없음');
-
-      ORG = order.map(d=>({dept:d, members:normalizeTeams(map.get(d))}));
-
-      // 설정 시트에서 회사명
-      const cfgName = wb.SheetNames.find(n=>/설정|config|회사/i.test(n));
-      if(cfgName){
-        const cfg=XLSX.utils.sheet_to_json(wb.Sheets[cfgName],{header:1});
-        cfg.forEach(rw=>{ if(rw[0] && /회사|company|name/i.test(rw[0]) && rw[1]){ COMPANY=String(rw[1]).trim(); } });
-        saveName(); applyName();
-      }
+      ORG = org;
+      if(company){ COMPANY=String(company).trim(); saveName(); applyName(); }
 
       save(); openState={}; render();
-      alert(`불러오기 완료 · ${ORG.length}개 부서, ${ORG.reduce((a,d)=>a+d.members.length,0)}명`);
+      alert(`복원 완료 · ${ORG.length}개 부서, ${ORG.reduce((a,d)=>a+d.members.length,0)}명`);
     }catch(err){
-      alert('엑셀을 읽지 못했습니다. 헤더가 [부서·팀·이름·직급·핸드폰·내선번호·담당업무] 인지 확인하세요.');
+      alert('JSON 파일을 읽지 못했습니다. 이 앱에서 백업한 JSON 파일인지 확인하세요.');
     }
     importFile.value='';
   };
-  r.readAsArrayBuffer(f);
+  r.readAsText(f);
 };
 resetBtn.onclick=()=>{
   if(!confirm('모든 변경을 지우고 초기 샘플 데이터로 되돌릴까요?')) return;
