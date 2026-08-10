@@ -1,5 +1,5 @@
 /* GroovePlay 조직도 PWA service worker */
-const CACHE = "grooveplay-org-v6";
+const CACHE = "grooveplay-org-v7";
 const ASSETS = [
   "./",
   "./index.html",
