@@ -199,24 +199,55 @@
   .b-cancel{background:var(--field);color:var(--text)}
   .b-del{background:var(--danger-soft);color:var(--danger);flex:0 0 auto;padding:14px 18px}
 
-  /* ===== 넓은 화면: 부서 카드 마소리(다단) 재배치 ===== */
+  /* ===== 넓은 화면 ===== */
   @media (min-width:700px){
     .app{max-width:1200px}
-    /* 보기 모드: 카드를 다단으로 촘촘히(높이 달라도 빈틈 없이) 배치 */
-    .list:not(.editing){
+
+    /* 검색 결과(보기 모드): 카드를 다단으로 촘촘히 배치 */
+    .list:not(.editing):not(.sidebar){
       column-width:340px;column-gap:16px;
       padding:16px 18px calc(80px + env(safe-area-inset-bottom));
     }
-    .list:not(.editing) .dept{
+    .list:not(.editing):not(.sidebar) .dept{
       margin:0 0 16px;break-inside:avoid;-webkit-column-break-inside:avoid;
     }
-    /* 넓은 화면에선 부서를 펼친 상태로 보여 아래 여백을 인원으로 채움 */
-    .list:not(.editing) .dept .members{max-height:none;padding:0 0 10px}
-    .list:not(.editing) .dept .arw{transform:rotate(90deg)}
-    .list:not(.editing) .dept .m,
-    .list:not(.editing) .dept .team-head{opacity:1;transform:none;animation:none}
+    .list:not(.editing):not(.sidebar) .dept .members{max-height:none;padding:0 0 10px}
+    .list:not(.editing):not(.sidebar) .dept .arw{transform:rotate(90deg)}
+    .list:not(.editing):not(.sidebar) .dept .m,
+    .list:not(.editing):not(.sidebar) .dept .team-head{opacity:1;transform:none;animation:none}
+
     /* 편집 모드: 드래그 순서변경이 직관적이도록 한 줄 유지 */
     .list.editing{max-width:480px;margin:0 auto}
+
+    /* 사이드바형: 좌측 부서 목록 + 우측 상세(부서 포커싱) */
+    .list.sidebar{padding:18px 18px calc(40px + env(safe-area-inset-bottom))}
+    .side{display:grid;grid-template-columns:250px 1fr;gap:18px;align-items:start}
+    .rail-list{background:var(--surface);border-radius:20px;padding:8px;box-shadow:var(--shadow);
+      position:sticky;display:flex;flex-direction:column;gap:2px}
+    .rail-list .ri{display:flex;align-items:center;gap:10px;padding:12px 13px;border:none;background:none;
+      border-radius:13px;cursor:pointer;font-family:inherit;color:var(--text);width:100%;text-align:left;
+      transition:background .13s}
+    .rail-list .ri:hover{background:var(--field)}
+    .rail-list .ri.on{background:var(--accent-soft)}
+    .rail-list .dot{width:9px;height:9px;border-radius:3px;flex:none;background:var(--av)}
+    .rail-list .rn{font-weight:800;font-size:14px;letter-spacing:-.2px}
+    .rail-list .rc{margin-left:auto;font-size:11px;font-weight:700;color:var(--sub);
+      background:var(--field);padding:2px 8px;border-radius:999px}
+    .rail-list .ri.on .rc{background:var(--surface)}
+    .side .panel{background:var(--surface);border-radius:22px;padding:20px 22px 26px;
+      box-shadow:var(--shadow);min-height:64vh;animation:fade .25s ease}
+    @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    .side .panel-head{display:flex;align-items:center;gap:10px;margin:0 0 4px}
+    .side .ph-name{font-size:19px;font-weight:800;letter-spacing:-.4px}
+    .side .ph-cnt{font-size:12px;font-weight:700;color:var(--sub);background:var(--field);
+      padding:3px 10px;border-radius:999px}
+    .side .team-head{opacity:1;transform:none;animation:none;padding:14px 2px 6px}
+    .side .ppl{display:grid;grid-template-columns:repeat(auto-fill,minmax(256px,1fr));gap:8px}
+    .side .ppl .m{background:var(--field);border-radius:14px;padding:11px 12px;
+      opacity:1;transform:none;animation:none;cursor:default;align-items:flex-start}
+    .side .ppl .m.in-team{padding-left:12px}
+    .side .ppl .m .duty{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.45}
+
     /* 모달: 하단 시트 대신 화면 중앙 다이얼로그 */
     .mask{align-items:center}
     .sheet{border-radius:24px;max-height:88vh}
@@ -329,6 +360,9 @@ let editMode = false;
 let openState = {};
 let mEditRef = null;
 let dEditRef = null;
+let selDept = 0;                                   // 사이드바형에서 포커싱된 부서
+const mqWide = window.matchMedia('(min-width:700px)');
+mqWide.addEventListener('change', ()=>render());   // 좁은/넓은 화면 전환 시 재구성
 
 function load(){
   try{
@@ -418,6 +452,15 @@ function render(){
   const query=q.value.trim();
   clr.style.display=query?'block':'none';
   updateCount();
+
+  // 넓은 화면 · 보기 모드 · 검색 없음 → 사이드바형(부서 포커싱)
+  if(mqWide.matches && !editMode && !query){
+    list.classList.add('sidebar');
+    renderSidebar();
+    return;
+  }
+  list.classList.remove('sidebar');
+
   list.innerHTML='';
   let anyResult=false;
 
@@ -507,6 +550,62 @@ function render(){
   });
 
   empty.className='empty'+(anyResult?'':' show');
+}
+
+// ---------- 사이드바형 렌더(넓은 화면) ----------
+function renderSidebar(){
+  empty.className='empty';                          // 검색 결과 안내 숨김
+  if(!ORG.length){ list.innerHTML=''; return; }
+  if(selDept>=ORG.length) selDept=ORG.length-1;
+  if(selDept<0) selDept=0;
+
+  const rail=ORG.map((d,i)=>`
+    <button class="ri ${i===selDept?'on':''}" data-di="${i}">
+      <span class="dot" style="--av:${colorFor(d.dept||'?')}"></span>
+      <span class="rn">${esc(d.dept)}</span>
+      <span class="rc">${d.members.length}</span>
+    </button>`).join('');
+
+  const d=ORG[selDept];
+  list.innerHTML=`
+    <div class="side">
+      <nav class="rail-list">${rail}</nav>
+      <div class="panel">
+        <div class="panel-head"><span class="ph-name">${esc(d.dept)}</span><span class="ph-cnt">${d.members.length}명</span></div>
+        ${sidebarMembers(d)}
+      </div>
+    </div>`;
+
+  list.querySelectorAll('.ri').forEach(b=>{
+    b.onclick=()=>{ selDept=+b.dataset.di; renderSidebar(); };
+  });
+
+  // 부서 목록이 상단바에 가리지 않도록 sticky 위치를 헤더 높이에 맞춤
+  const rl=list.querySelector('.rail-list'), top=document.querySelector('.top');
+  if(rl && top) rl.style.top=(top.offsetHeight+8)+'px';
+}
+
+// 부서 상세: 팀별로 묶어 인원 카드 그리드로
+function sidebarMembers(d){
+  const order=[]; const map=new Map();
+  d.members.forEach(m=>{ const t=(m.team||'').trim(); if(!map.has(t)){map.set(t,[]);order.push(t);} map.get(t).push(m); });
+  const html=order.map(t=>{
+    const head=t?`<div class="team-head"><span class="tline"></span><span class="tname">${esc(t)}</span></div>`:'';
+    const rows=map.get(t).map(m=>{
+      const extChip = m.ext ? `<span class="tel ext">${IC.call} 내선 ${esc(m.ext)}</span>` : '';
+      const mobChip = m.mobile ? `<a class="tel mob" draggable="false" href="tel:${(m.mobile||'').replace(/[^0-9+]/g,'')}">${IC.phone} ${esc(m.mobile)}</a>` : '';
+      return `<div class="m${t?' in-team':''}">
+        <div class="av" style="--av:${colorFor(m.name||'?')}">${esc((m.name||'?').slice(-2))}</div>
+        <div class="info">
+          <div class="r1"><span class="nm">${esc(m.name)}</span><span class="rk">${esc(m.rank)}</span></div>
+          <div class="duty">${esc(m.duty)}</div>
+          <div class="tels">${mobChip}${extChip}</div>
+        </div>
+      </div>`;
+    }).join('');
+    return `${head}<div class="ppl">${rows}</div>`;
+  }).join('');
+  return html || `<div style="color:var(--sub);font-size:14px;padding:30px 4px">인원이 없습니다.</div>`;
 }
 
 // ---------- 접기/펼치기 ----------
