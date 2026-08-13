@@ -199,16 +199,24 @@
   .b-cancel{background:var(--field);color:var(--text)}
   .b-del{background:var(--danger-soft);color:var(--danger);flex:0 0 auto;padding:14px 18px}
 
-  /* ===== 넓은 화면: 부서 카드 그리드로 재배치 ===== */
+  /* ===== 넓은 화면: 부서 카드 마소리(다단) 재배치 ===== */
   @media (min-width:700px){
     .app{max-width:1200px}
-    /* 보기 모드: 부서 카드를 화면 폭에 맞춰 여러 열로 */
-    .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));
-      gap:14px;align-items:start;padding:16px 18px calc(80px + env(safe-area-inset-bottom))}
-    .list .dept{margin:0}
+    /* 보기 모드: 카드를 다단으로 촘촘히(높이 달라도 빈틈 없이) 배치 */
+    .list:not(.editing){
+      column-width:340px;column-gap:16px;
+      padding:16px 18px calc(80px + env(safe-area-inset-bottom));
+    }
+    .list:not(.editing) .dept{
+      margin:0 0 16px;break-inside:avoid;-webkit-column-break-inside:avoid;
+    }
+    /* 넓은 화면에선 부서를 펼친 상태로 보여 아래 여백을 인원으로 채움 */
+    .list:not(.editing) .dept .members{max-height:none;padding:0 0 10px}
+    .list:not(.editing) .dept .arw{transform:rotate(90deg)}
+    .list:not(.editing) .dept .m,
+    .list:not(.editing) .dept .team-head{opacity:1;transform:none;animation:none}
     /* 편집 모드: 드래그 순서변경이 직관적이도록 한 줄 유지 */
-    .list.editing{display:block;max-width:480px;margin:0 auto}
-    .list.editing .dept{margin:12px 0 0}
+    .list.editing{max-width:480px;margin:0 auto}
     /* 모달: 하단 시트 대신 화면 중앙 다이얼로그 */
     .mask{align-items:center}
     .sheet{border-radius:24px;max-height:88vh}
